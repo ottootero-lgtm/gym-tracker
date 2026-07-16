@@ -1,41 +1,72 @@
 import { useState, useEffect, useRef } from "react";
 
+// ─────────────────────────────────────────────
+// TÉCNICAS DE INTENSIDAD
+// dropset: última serie → fallo → baja ~40% el peso → fallo otra vez
+// restpause: última serie → fallo → 15s descanso → 3-5 reps → 15s → 2-3 reps
+// pausa: pausa de 2 segundos abajo (estiramiento) en CADA rep
+// superset: ejercicio A + B sin descanso entre ellos
+// ─────────────────────────────────────────────
+
+const TECH_INFO = {
+  dropset: {
+    label: "DROP SET",
+    color: "#ef4444",
+    desc: "Solo en la ÚLTIMA serie: llega al fallo, baja el peso ~40% y sigue hasta fallar otra vez.",
+  },
+  restpause: {
+    label: "REST-PAUSE",
+    color: "#f97316",
+    desc: "Solo en la ÚLTIMA serie: fallo → descansa 15 seg → 3-5 reps más → 15 seg → 2-3 reps finales.",
+  },
+  pausa: {
+    label: "PAUSA 2s",
+    color: "#06b6d4",
+    desc: "En CADA rep: pausa de 2 segundos abajo, en el estiramiento. Sin rebotes.",
+  },
+  superset: {
+    label: "SUPERSERIE",
+    color: "#a855f7",
+    desc: "Haz este ejercicio y el siguiente SIN descanso entre ellos. Descansa al terminar los dos.",
+  },
+};
+
 const SESSIONS = {
   "Lunes — UPPER A": [
-    { name: "Press de banca con barra", series: 4, reps: "6-10", rest: 120 },
-    { name: "Remo en máquina de discos", series: 4, reps: "8-10", rest: 120 },
-    { name: "Press militar con mancuernas", series: 3, reps: "8-12", rest: 90 },
-    { name: "Aperturas de pecho en máquina", series: 3, reps: "10-12", rest: 90 },
-    { name: "Extensión de tríceps en polea", series: 3, reps: "10-15", rest: 60 },
-    { name: "Curl de antebrazo con barra", series: 3, reps: "12-15", rest: 60 },
-    { name: "Agarre invertido", series: 3, reps: "12-15", rest: 60 },
+    { name: "1. Press de banca con barra", series: 4, reps: "6-10", rest: 120, note: "Compuesto principal. Peso limpio, sin técnicas. Fresco o nada." },
+    { name: "2. Remo en máquina de discos", series: 4, reps: "8-10", rest: 120, note: "Peso limpio. Agarre fresco (por eso antebrazo va al final)." },
+    { name: "3. Press militar con mancuernas", series: 3, reps: "8-12", rest: 90, note: "El hombro ya viene tocado de banca: menos peso, mismo estímulo." },
+    { name: "4. Aperturas de pecho en máquina", series: 3, reps: "10-12", rest: 90, tech: "dropset", note: "Remata el pecho pre-fatigado." },
+    { name: "5. Extensión de tríceps en polea", series: 4, reps: "10-15", rest: 60, tech: "restpause", note: "El tríceps viene tocado de los press." },
+    { name: "6A. Curl de antebrazo con barra", series: 3, reps: "12-15", rest: 0, tech: "superset", note: "Superserie con 6B. Sin descanso entre ambos." },
+    { name: "6B. Agarre invertido (barra EZ)", series: 3, reps: "12-15", rest: 60, tech: "superset", note: "Palmas hacia abajo. Descansa 60s tras completar A+B." },
   ],
   "Martes — LOWER A": [
-    { name: "Prensa con banda", series: 4, reps: "6-10", rest: 120 },
-    { name: "Sentadilla goblet con mancuerna", series: 3, reps: "10-12", rest: 90 },
-    { name: "Extensión de cuádriceps en máquina", series: 3, reps: "10-15", rest: 90 },
-    { name: "Zancadas con mancuernas", series: 3, reps: "10 c/lado", rest: 90 },
-    { name: "Elevación de gemelos en máquina", series: 4, reps: "10-15", rest: 60 },
-    { name: "Hollow Body Hold", series: 3, reps: "30 seg", rest: 45 },
+    { name: "1. Prensa con banda", series: 4, reps: "6-10", rest: 120, note: "El movimiento más pesado de pierna. Va primero sí o sí." },
+    { name: "2. Sentadilla goblet con mancuerna", series: 3, reps: "10-12", rest: 90, note: "Refuerza el patrón con el cuádriceps ya activado." },
+    { name: "3. Extensión de cuádriceps en máquina", series: 3, reps: "10-15", rest: 90, tech: "dropset", note: "Cuádriceps pre-agotado: aquí lo rematas." },
+    { name: "4. Zancadas con mancuernas", series: 3, reps: "10 c/lado", rest: 90, note: "Si la fatiga compromete técnica, baja a 2 series." },
+    { name: "5. Elevación de gemelos en máquina", series: 4, reps: "10-15", rest: 60, tech: "pausa", note: "Pausa 2s abajo en cada rep. Sin rebote = cada rep vale doble." },
+    { name: "6. Hollow Body Hold", series: 3, reps: "30 seg", rest: 45, note: "Pelvis neutra incluso fatigado: clave para tu postura." },
   ],
   "Jueves — UPPER B": [
-    { name: "Jalón al pecho agarre ancho", series: 4, reps: "6-10", rest: 120 },
-    { name: "Jalón al pecho agarre cerrado", series: 3, reps: "8-12", rest: 90 },
-    { name: "Pull over unilateral en polea", series: 3, reps: "10-12", rest: 90 },
-    { name: "Elevaciones laterales en máquina", series: 3, reps: "12-15", rest: 60 },
-    { name: "Elevaciones posteriores con mancuernas", series: 3, reps: "15-20", rest: 60 },
-    { name: "Curl de bíceps araña con barra", series: 3, reps: "8-10", rest: 90 },
-    { name: "Curl martillo con mancuernas", series: 3, reps: "10-12", rest: 60 },
-    { name: "Paseo del granjero", series: 3, reps: "30 seg", rest: 60 },
+    { name: "1. Jalón al pecho agarre ancho", series: 4, reps: "6-10", rest: 120, note: "Compuesto principal. Peso limpio. Da anchura de espalda." },
+    { name: "2. Press inclinado con mancuernas", series: 3, reps: "8-12", rest: 90, note: "Pecho superior (tu zona a mejorar). Intercalado entre tirones." },
+    { name: "3. Remo sentado en polea", series: 3, reps: "8-12", rest: 90, note: "Grosor de espalda. Pre-fatigada del jalón = menos peso, mismo efecto." },
+    { name: "4. Elevaciones laterales en máquina", series: 3, reps: "12-15", rest: 60, tech: "dropset", note: "Anchura de hombros. Músculo pequeño, ideal para drop set." },
+    { name: "5. Elevaciones posteriores con mancuernas", series: 3, reps: "15-20", rest: 60, note: "Hombro posterior fresco. Reps altas, responde mejor así." },
+    { name: "6. Curl de bíceps araña con barra", series: 3, reps: "8-10", rest: 90, tech: "restpause", note: "Sin impulso posible. El bíceps ya lleva jalón + remo encima." },
+    { name: "7A. Curl martillo con mancuernas", series: 3, reps: "10-12", rest: 0, tech: "superset", note: "Superserie con 7B. Sin descanso entre ambos." },
+    { name: "7B. Paseo del granjero", series: 3, reps: "30 seg", rest: 60, tech: "superset", note: "Al acabar no deberías poder cerrar bien el puño. Esa es la señal." },
   ],
   "Viernes — LOWER B": [
-    { name: "Curl femoral tumbado en máquina", series: 4, reps: "10-12", rest: 90 },
-    { name: "Hiperextensión lumbar con peso", series: 3, reps: "10-15", rest: 90 },
-    { name: "Prensa inclinada a una pierna", series: 3, reps: "8-10 c/lado", rest: 90 },
-    { name: "Aducción de cadera en máquina", series: 3, reps: "12-15", rest: 45 },
-    { name: "Abducción de cadera en máquina", series: 3, reps: "12-15", rest: 45 },
-    { name: "Elevación de gemelos de pie", series: 3, reps: "12-15", rest: 60 },
-    { name: "Jack Knife Crunch", series: 3, reps: "12-15", rest: 60 },
+    { name: "1. Curl femoral tumbado en máquina", series: 4, reps: "10-12", rest: 90, note: "Femoral fresco y primero: es tu prioridad rezagada." },
+    { name: "2. Prensa inclinada a una pierna", series: 3, reps: "8-10 c/lado", rest: 90, note: "Glúteo y cuádriceps sin robarle nada al femoral. Corrige desequilibrios." },
+    { name: "3. Curl femoral sentado", series: 3, reps: "10-12", rest: 90, tech: "dropset", note: "Trabaja el femoral en más estiramiento que el tumbado." },
+    { name: "4. Hiperextensión lumbar con peso", series: 3, reps: "10-15", rest: 90, note: "Subir controlado, SIN hiperextender arriba. Parte de tu corrección postural." },
+    { name: "5A. Aducción de cadera en máquina", series: 3, reps: "12-15", rest: 0, tech: "superset", note: "Superserie con 5B. Sin descanso entre ambos." },
+    { name: "5B. Abducción de cadera en máquina", series: 3, reps: "12-15", rest: 45, tech: "superset", note: "Estabilizan la pelvis. Descansa 45s tras completar A+B." },
+    { name: "6. Elevación de gemelos de pie", series: 3, reps: "12-15", rest: 60, tech: "pausa", note: "Pausa 2s abajo en cada rep. Complementa al de máquina del martes." },
   ],
 };
 
@@ -68,6 +99,19 @@ function saveData(data) {
   try {
     localStorage.setItem("otto-gym-data", JSON.stringify(data));
   } catch {}
+}
+
+function TechBadge({ tech }) {
+  if (!tech) return null;
+  const t = TECH_INFO[tech];
+  return (
+    <span style={{
+      display: "inline-block", background: t.color + "22", color: t.color,
+      border: `1px solid ${t.color}55`, borderRadius: 5, padding: "1px 7px",
+      fontSize: 10, fontWeight: 800, letterSpacing: 0.5, marginLeft: 6,
+      verticalAlign: "middle", whiteSpace: "nowrap"
+    }}>{t.label}</span>
+  );
 }
 
 function Timer({ seconds, onDone }) {
@@ -105,12 +149,15 @@ function Timer({ seconds, onDone }) {
   );
 }
 
-function SetRow({ setNum, exerciseName, sessionKey, onRestStart, savedData, onSave }) {
+function SetRow({ setNum, totalSets, exerciseName, sessionKey, tech, onRestStart, savedData, onSave }) {
   const key = `${sessionKey}||${exerciseName}||set${setNum}`;
   const saved = savedData[key] || {};
   const [kg, setKg] = useState(saved.kg || "");
   const [reps, setReps] = useState(saved.reps || "");
   const [done, setDone] = useState(saved.done || false);
+
+  const isLastSet = setNum === totalSets;
+  const lastSetTech = (tech === "dropset" || tech === "restpause") && isLastSet;
 
   function handleDone() {
     const newDone = !done;
@@ -127,14 +174,22 @@ function SetRow({ setNum, exerciseName, sessionKey, onRestStart, savedData, onSa
       borderBottom: "1px solid #1f2937", opacity: done ? 0.5 : 1, transition: "opacity 0.2s"
     }}>
       <div style={{
-        width: 24, height: 24, borderRadius: "50%", background: "#1f2937",
+        width: 24, height: 24, borderRadius: "50%",
+        background: lastSetTech ? TECH_INFO[tech].color + "33" : "#1f2937",
+        border: lastSetTech ? `1px solid ${TECH_INFO[tech].color}` : "none",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 11, color: "#6b7280", flexShrink: 0
+        fontSize: 11, color: lastSetTech ? TECH_INFO[tech].color : "#6b7280",
+        fontWeight: lastSetTech ? 800 : 400, flexShrink: 0
       }}>{setNum}</div>
       <input type="number" placeholder="kg" value={kg} onChange={e => handleKg(e.target.value)}
         style={{ width: 56, background: "#1f2937", border: "1px solid #374151", borderRadius: 6, color: "#f9fafb", padding: "6px 8px", fontSize: 14, textAlign: "center", outline: "none" }} />
       <input type="number" placeholder="reps" value={reps} onChange={e => handleReps(e.target.value)}
         style={{ width: 56, background: "#1f2937", border: "1px solid #374151", borderRadius: 6, color: "#f9fafb", padding: "6px 8px", fontSize: 14, textAlign: "center", outline: "none" }} />
+      {lastSetTech && (
+        <span style={{ fontSize: 9, color: TECH_INFO[tech].color, fontWeight: 700, letterSpacing: 0.3 }}>
+          {TECH_INFO[tech].label} AQUÍ
+        </span>
+      )}
       <button onClick={handleDone} style={{
         marginLeft: "auto", width: 32, height: 32, borderRadius: "50%",
         background: done ? "#10b981" : "#1f2937", border: done ? "none" : "1px solid #374151",
@@ -153,6 +208,8 @@ function ExerciseCard({ exercise, sessionKey, color, savedData, onSave, onRestSt
     return savedData[k]?.done;
   }).filter(Boolean).length;
 
+  const tech = exercise.tech ? TECH_INFO[exercise.tech] : null;
+
   return (
     <div style={{
       background: "#111827", borderRadius: 12, marginBottom: 10,
@@ -162,12 +219,17 @@ function ExerciseCard({ exercise, sessionKey, color, savedData, onSave, onRestSt
         width: "100%", background: "none", border: "none", cursor: "pointer",
         padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, textAlign: "left"
       }}>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 8, background: (tech ? tech.color : color) + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <span style={{ fontSize: 16 }}>💪</span>
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ color: "#f9fafb", fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{exercise.name}</div>
-          <div style={{ color: "#6b7280", fontSize: 12 }}>{exercise.series} series · {exercise.reps} reps · {formatTime(exercise.rest)} descanso</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: "#f9fafb", fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
+            {exercise.name}
+            <TechBadge tech={exercise.tech} />
+          </div>
+          <div style={{ color: "#6b7280", fontSize: 12 }}>
+            {exercise.series} series · {exercise.reps} reps{exercise.rest > 0 ? ` · ${formatTime(exercise.rest)} descanso` : " · sin descanso →"}
+          </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
           <div style={{ fontSize: 12, color: doneSets === totalSets ? "#10b981" : "#6b7280" }}>{doneSets}/{totalSets}</div>
@@ -176,14 +238,29 @@ function ExerciseCard({ exercise, sessionKey, color, savedData, onSave, onRestSt
       </button>
       {open && (
         <div style={{ padding: "0 16px 16px" }}>
+          {tech && (
+            <div style={{
+              background: tech.color + "11", border: `1px solid ${tech.color}44`,
+              borderRadius: 8, padding: "8px 12px", marginBottom: 10,
+              fontSize: 12, color: "#d1d5db", lineHeight: 1.5
+            }}>
+              <span style={{ color: tech.color, fontWeight: 800 }}>{tech.label}: </span>
+              {tech.desc}
+            </div>
+          )}
+          {exercise.note && (
+            <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 10, lineHeight: 1.5, fontStyle: "italic" }}>
+              💡 {exercise.note}
+            </div>
+          )}
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <div style={{ flex: 1, textAlign: "center", fontSize: 11, color: "#6b7280", letterSpacing: 1 }}>KG</div>
-            <div style={{ flex: 1, textAlign: "center", fontSize: 11, color: "#6b7280", letterSpacing: 1 }}>REPS</div>
-            <div style={{ width: 32 }} />
+            <div style={{ width: 24 }} />
+            <div style={{ width: 56, textAlign: "center", fontSize: 11, color: "#6b7280", letterSpacing: 1 }}>KG</div>
+            <div style={{ width: 56, textAlign: "center", fontSize: 11, color: "#6b7280", letterSpacing: 1 }}>REPS</div>
           </div>
           {Array.from({ length: totalSets }, (_, i) => (
-            <SetRow key={i} setNum={i + 1} exerciseName={exercise.name} sessionKey={sessionKey}
-              savedData={savedData} onSave={onSave} onRestStart={() => onRestStart(exercise.rest)} />
+            <SetRow key={i} setNum={i + 1} totalSets={totalSets} exerciseName={exercise.name} sessionKey={sessionKey}
+              tech={exercise.tech} savedData={savedData} onSave={onSave} onRestStart={() => onRestStart(exercise.rest || 60)} />
           ))}
         </div>
       )}
@@ -246,6 +323,44 @@ function HistoryView({ savedData }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function GuideView() {
+  return (
+    <div style={{ padding: 16 }}>
+      <div style={{ fontSize: 12, color: "#6b7280", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>Técnicas de intensidad</div>
+      {Object.entries(TECH_INFO).map(([key, t]) => (
+        <div key={key} style={{
+          background: "#111827", borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+          border: `1px solid ${t.color}33`
+        }}>
+          <div style={{ color: t.color, fontSize: 13, fontWeight: 800, letterSpacing: 1, marginBottom: 6 }}>{t.label}</div>
+          <div style={{ color: "#d1d5db", fontSize: 13, lineHeight: 1.6 }}>{t.desc}</div>
+        </div>
+      ))}
+      <div style={{
+        background: "#111827", borderRadius: 12, padding: "14px 16px", marginTop: 20,
+        border: "1px solid #1f2937"
+      }}>
+        <div style={{ color: "#f59e0b", fontSize: 13, fontWeight: 800, marginBottom: 8 }}>⚠️ REGLA DE LAS 2 PRIMERAS SEMANAS</div>
+        <div style={{ color: "#d1d5db", fontSize: 13, lineHeight: 1.6 }}>
+          Las semanas 1 y 2 haz el plan SIN drop sets ni rest-pause — solo superseries y pausas de gemelo.
+          Primero establece tus pesos de referencia. A partir de la semana 3, actívalo todo.
+        </div>
+      </div>
+      <div style={{
+        background: "#111827", borderRadius: 12, padding: "14px 16px", marginTop: 10,
+        border: "1px solid #1f2937"
+      }}>
+        <div style={{ color: "#10b981", fontSize: 13, fontWeight: 800, marginBottom: 8 }}>📈 PROGRESIÓN</div>
+        <div style={{ color: "#d1d5db", fontSize: 13, lineHeight: 1.6 }}>
+          Cuando llegues al tope del rango de reps en todas las series de un ejercicio, sube el peso la semana
+          siguiente (~2.5kg en máquinas, 1.25kg por mancuerna). Los compuestos pesados (banca, remo, jalón,
+          prensa, femoral tumbado) siempre limpios: su técnica de intensidad es más peso cada semana.
+        </div>
+      </div>
     </div>
   );
 }
@@ -343,7 +458,7 @@ export default function GymTracker() {
         {tab === "entrenar" && activeSession && (
           <div style={{ padding: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: "#6b7280", letterSpacing: 2, textTransform: "uppercase" }}>{SESSIONS[activeSession].length} ejercicios</div>
+              <div style={{ fontSize: 12, color: "#6b7280", letterSpacing: 2, textTransform: "uppercase" }}>{SESSIONS[activeSession].length} ejercicios · en orden</div>
               <button onClick={() => handleClearSession(activeSession)} style={{ background: "transparent", border: "1px solid #374151", color: "#6b7280", padding: "4px 10px", borderRadius: 6, fontSize: 11, cursor: "pointer" }}>Resetear sesión</button>
             </div>
             {SESSIONS[activeSession].map((exercise, i) => (
@@ -353,6 +468,7 @@ export default function GymTracker() {
           </div>
         )}
 
+        {tab === "guia" && <GuideView />}
         {tab === "historial" && <HistoryView savedData={savedData} />}
       </div>
 
@@ -360,7 +476,11 @@ export default function GymTracker() {
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
         width: "100%", maxWidth: 480, background: "#0d1117", borderTop: "1px solid #1f2937", display: "flex"
       }}>
-        {[{ key: "entrenar", label: "Entrenar", icon: "🏋️" }, { key: "historial", label: "Historial", icon: "📊" }].map(({ key, label, icon }) => (
+        {[
+          { key: "entrenar", label: "Entrenar", icon: "🏋️" },
+          { key: "guia", label: "Guía", icon: "📖" },
+          { key: "historial", label: "Historial", icon: "📊" },
+        ].map(({ key, label, icon }) => (
           <button key={key} onClick={() => { setTab(key); if (key === "entrenar") setActiveSession(null); }} style={{
             flex: 1, background: "none", border: "none", padding: "12px 0 16px", cursor: "pointer",
             display: "flex", flexDirection: "column", alignItems: "center", gap: 4
